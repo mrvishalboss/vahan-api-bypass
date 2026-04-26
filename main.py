@@ -19,8 +19,9 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
     async with async_playwright() as p:
         try:
             # Playwright ब्राउज़र सेटअप (Anti-bot बाईपास के लिए)
+            # अगर फिर भी खाली डेटा आए, तो टेस्टिंग के लिए headless=False करके देखें
             browser = await p.chromium.launch(
-                headless=True,
+                headless=True, 
                 args=[
                     '--no-sandbox', 
                     '--disable-setuid-sandbox', 
@@ -40,12 +41,17 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
             
             # पेज लोड होने का इंतज़ार
             await page.goto(target_url, wait_until="networkidle", timeout=60000)
-            await page.wait_for_timeout(3000) 
             
-            # डेटा एक्सट्रेक्ट करना
+            # ⏳ सिक्योरिटी चैलेंज (JS Check) को पास होने के लिए 5 सेकंड का समय दिया है
+            await page.wait_for_timeout(5000) 
+            
+            # डेटा एक्सट्रेक्ट करना (सुनिश्चित करना कि body लोड हो चुकी है)
             try:
+                await page.wait_for_selector("body", timeout=10000)
+                # पहले <pre> टैग ढूंढने की कोशिश करेगा (जहाँ आमतौर पर JSON होता है)
                 content = await page.locator("pre").inner_text(timeout=5000)
             except:
+                # अगर <pre> नहीं मिला, तो पूरा <body> रीड करेगा
                 content = await page.inner_text("body")
                 
             await browser.close()
