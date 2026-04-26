@@ -26,8 +26,8 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
             page = await browser.new_page()
             target_url = f"https://api-by-black-hats-hackers.kesug.com/vehicle-api.php?vehicle_no={vehicle_no}"
             
-            # API load hone ka wait karein
-            await page.goto(target_url, wait_until="networkidle", timeout=25000)
+            # 🔴 TIMEOUT FIX: networkidle ki jagah domcontentloaded aur time 60s kiya gaya hai
+            await page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
             
             # Page ka text nikaalein
             content = await page.inner_text("body")
