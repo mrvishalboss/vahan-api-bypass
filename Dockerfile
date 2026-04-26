@@ -1,4 +1,4 @@
-# Use the official Playwright image matching your library version
+# Use the official Playwright image matching your library version (1.58.0)
 FROM mcr.microsoft.com/playwright/python:v1.58.0-jammy
 
 # Set the working directory inside the container
