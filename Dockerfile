@@ -1,5 +1,5 @@
-# Microsoft ki official image jisme Playwright aur Chrome pehle se set hota hai (Koi error nahi aayega)
-FROM mcr.microsoft.com/playwright/python:v1.43.0-jammy
+# Microsoft ki official image - VERSION UPDATED TO 1.50.0
+FROM mcr.microsoft.com/playwright/python:v1.50.0-jammy
 
 WORKDIR /app
 
