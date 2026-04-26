@@ -18,7 +18,7 @@ def home():
 async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number")):
     async with async_playwright() as p:
         try:
-            # Browser setup
+            # Playwright ब्राउज़र सेटअप (Anti-bot बाईपास के लिए)
             browser = await p.chromium.launch(
                 headless=True,
                 args=[
@@ -35,13 +35,14 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
             
             page = await context.new_page()
             
-            # Cache Buster URL
+            # Cache Buster के साथ टारगेट URL
             target_url = f"https://api-by-black-hats-hackers.kesug.com/vehicle-api.php?vehicle_no={vehicle_no}&_t={int(time.time())}"
             
-            # 🔴 Timeout se bachne ke liye domcontentloaded ka use karein
-            await page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
+            # पेज लोड होने का इंतज़ार
+            await page.goto(target_url, wait_until="networkidle", timeout=60000)
             await page.wait_for_timeout(3000) 
             
+            # डेटा एक्सट्रेक्ट करना
             try:
                 content = await page.locator("pre").inner_text(timeout=5000)
             except:
@@ -49,18 +50,19 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
                 
             await browser.close()
             
+            # JSON पार्सिंग और डेटा फ़िल्टरिंग
             try:
                 json_data = json.loads(content)
                 
-                # --- NEW PARSING LOGIC ---
+                # मुख्य डेटा ब्लॉक को टार्गेट करना
                 main_data = json_data.get("data", {})
                 vehicle_info_data = main_data.get("vehicle_info", {}).get("data", {})
                 
-                # Mobile Number aur Owner Name
+                # मोबाइल नंबर और ओनर का नाम निकालना
                 mobile_num = main_data.get("mobile_no", vehicle_info_data.get("owner_mobile", "Not Found"))
                 owner_name = vehicle_info_data.get("owner_name", "Not Provided by API")
-                # -------------------------
                 
+                # फाइनल रिस्पॉन्स रिटर्न करना
                 return {
                     "status": "success", 
                     "vehicle_number": vehicle_no,
