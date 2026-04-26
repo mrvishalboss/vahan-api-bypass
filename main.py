@@ -12,13 +12,12 @@ def home():
 async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number")):
     async with async_playwright() as p:
         try:
-            # 🔴 CRASH FIX: Docker ke liye special Chrome flags add kiye gaye hain
             browser = await p.chromium.launch(
                 headless=True,
                 args=[
                     '--no-sandbox', 
                     '--disable-setuid-sandbox', 
-                    '--disable-dev-shm-usage', # RAM crash rokne ke liye
+                    '--disable-dev-shm-usage',
                     '--disable-gpu',
                     '--single-process'
                 ]
@@ -26,20 +25,26 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
             page = await browser.new_page()
             target_url = f"https://api-by-black-hats-hackers.kesug.com/vehicle-api.php?vehicle_no={vehicle_no}"
             
-            # 🔴 TIMEOUT FIX: networkidle ki jagah domcontentloaded aur time 60s kiya gaya hai
             await page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
             
-            # Page ka text nikaalein
             content = await page.inner_text("body")
             await browser.close()
             
             try:
                 json_data = json.loads(content)
+                
+                # 🔴 सिर्फ Mobile Number निकालने का लॉजिक
+                mobile_num = "Not Found"
+                if "data" in json_data and "mobile_no" in json_data["data"]:
+                    mobile_num = json_data["data"]["mobile_no"]
+                
+                # 🔴 अब API सिर्फ मोबाइल नंबर रिटर्न करेगी
                 return {
                     "status": "success", 
                     "attribution": "Powered by Vishal Boss", 
-                    "data": json_data
+                    "mobile_number": mobile_num
                 }
+                
             except json.JSONDecodeError:
                 return {
                     "status": "error", 
@@ -48,5 +53,4 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
                 }
                 
         except Exception as e:
-            # Agar koi aur error aaye toh API crash hone ke bajaye error message degi
             return {"status": "error", "message": str(e)}
