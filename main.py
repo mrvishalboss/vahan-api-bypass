@@ -38,7 +38,8 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
             # Cache Buster URL
             target_url = f"https://api-by-black-hats-hackers.kesug.com/vehicle-api.php?vehicle_no={vehicle_no}&_t={int(time.time())}"
             
-            await page.goto(target_url, wait_until="networkidle", timeout=60000)
+            # 🔴 Timeout se bachne ke liye domcontentloaded ka use karein
+            await page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
             await page.wait_for_timeout(3000) 
             
             try:
@@ -52,14 +53,11 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
                 json_data = json.loads(content)
                 
                 # --- NEW PARSING LOGIC ---
-                # JSON के स्ट्रक्चर के हिसाब से सही जगह से डेटा निकालना
                 main_data = json_data.get("data", {})
                 vehicle_info_data = main_data.get("vehicle_info", {}).get("data", {})
                 
-                # मोबाइल नंबर (main_data में 'mobile_no' या vehicle_info_data में 'owner_mobile')
+                # Mobile Number aur Owner Name
                 mobile_num = main_data.get("mobile_no", vehicle_info_data.get("owner_mobile", "Not Found"))
-                
-                # ओनर का नाम
                 owner_name = vehicle_info_data.get("owner_name", "Not Provided by API")
                 # -------------------------
                 
