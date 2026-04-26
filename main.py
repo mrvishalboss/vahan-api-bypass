@@ -38,7 +38,7 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
                 if "data" in json_data and "mobile_no" in json_data["data"]:
                     mobile_num = json_data["data"]["mobile_no"]
                 
-                # 🔴 बिल्कुल आपके माँगे हुए फॉर्मेट में नया रिस्पॉन्स
+                # 🔴 फाइनल रिस्पॉन्स (बिना किसी timestamp या फालतू डेटा के)
                 return {
                     "status": "success", 
                     "vehicle_number": vehicle_no,
