@@ -18,7 +18,7 @@ def home():
 async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number")):
     async with async_playwright() as p:
         try:
-            # Browser setup with anti-detection args
+            # Browser setup
             browser = await p.chromium.launch(
                 headless=True,
                 args=[
@@ -35,7 +35,7 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
             
             page = await context.new_page()
             
-            # Cache Buster: URL के अंत में टाइमस्टैम्प
+            # Cache Buster URL
             target_url = f"https://api-by-black-hats-hackers.kesug.com/vehicle-api.php?vehicle_no={vehicle_no}&_t={int(time.time())}"
             
             await page.goto(target_url, wait_until="networkidle", timeout=60000)
@@ -51,8 +51,17 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
             try:
                 json_data = json.loads(content)
                 
-                mobile_num = json_data.get("mobile_number", json_data.get("mobile_no", "Not Found"))
-                owner_name = json_data.get("owner_name", "Not Provided by API")
+                # --- NEW PARSING LOGIC ---
+                # JSON के स्ट्रक्चर के हिसाब से सही जगह से डेटा निकालना
+                main_data = json_data.get("data", {})
+                vehicle_info_data = main_data.get("vehicle_info", {}).get("data", {})
+                
+                # मोबाइल नंबर (main_data में 'mobile_no' या vehicle_info_data में 'owner_mobile')
+                mobile_num = main_data.get("mobile_no", vehicle_info_data.get("owner_mobile", "Not Found"))
+                
+                # ओनर का नाम
+                owner_name = vehicle_info_data.get("owner_name", "Not Provided by API")
+                # -------------------------
                 
                 return {
                     "status": "success", 
@@ -60,8 +69,7 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
                     "owner_name": owner_name,
                     "mobile_number": mobile_num,
                     "api_owner": "Vishal Boss",
-                    "contact": "contact on telegram @techvishalboss",
-                    "debug_raw_data": json_data  # 👈 इससे असली API का डेटा दिखेगा
+                    "contact": "contact on telegram @techvishalboss"
                 }
                 
             except json.JSONDecodeError:
