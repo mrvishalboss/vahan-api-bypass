@@ -1,17 +1,15 @@
-# Use the official Playwright image matching your library version (1.58.0)
+# Base image - Version 1.58.0
 FROM mcr.microsoft.com/playwright/python:v1.58.0-jammy
 
-# Set the working directory inside the container
+# Work directory
 WORKDIR /app
 
-# Copy requirements first to leverage Docker layer caching
+# Install dependencies
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of your application code
+# Copy Python code
 COPY main.py .
 
-# Start the Uvicorn server, using the PORT environment variable injected by your host
-CMD uvicorn main:app --host 0.0.0.0 --port $PORT
+# Run the app with extra timeout
+CMD uvicorn main:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 120
