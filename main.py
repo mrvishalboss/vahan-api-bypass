@@ -29,21 +29,18 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
                 ]
             )
             
-            # Using a real user-agent to bypass basic bot checks
             context = await browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             )
             
             page = await context.new_page()
             
-            # Cache Buster: Adding timestamp to get fresh response from server
+            # Cache Buster: URL के अंत में टाइमस्टैम्प
             target_url = f"https://api-by-black-hats-hackers.kesug.com/vehicle-api.php?vehicle_no={vehicle_no}&_t={int(time.time())}"
             
-            # Waiting for the JS challenge to finish
             await page.goto(target_url, wait_until="networkidle", timeout=60000)
             await page.wait_for_timeout(3000) 
             
-            # Extracting content (checking <pre> first, then <body>)
             try:
                 content = await page.locator("pre").inner_text(timeout=5000)
             except:
@@ -51,7 +48,6 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
                 
             await browser.close()
             
-            # Parsing JSON and preparing your branded response
             try:
                 json_data = json.loads(content)
                 
@@ -64,13 +60,14 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
                     "owner_name": owner_name,
                     "mobile_number": mobile_num,
                     "api_owner": "Vishal Boss",
-                    "contact": "contact on telegram @techvishalboss"
+                    "contact": "contact on telegram @techvishalboss",
+                    "debug_raw_data": json_data  # 👈 इससे असली API का डेटा दिखेगा
                 }
                 
             except json.JSONDecodeError:
                 return {
                     "status": "error", 
-                    "message": "Api Updating.", 
+                    "message": "Challenge bypass nahi hua ya data valid JSON nahi hai.", 
                     "raw": content.strip(),
                     "api_owner": "Vishal Boss",
                     "contact": "contact on telegram @techvishalboss"
