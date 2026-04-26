@@ -12,7 +12,6 @@ def home():
 async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number")):
     async with async_playwright() as p:
         try:
-            # Browser settings optimized for free server
             browser = await p.chromium.launch(
                 headless=True,
                 args=[
@@ -25,7 +24,6 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
                 ]
             )
             
-            # Block heavy files (Images/CSS) to save RAM
             context = await browser.new_context()
             async def block_aggressively(route):
                 if route.request.resource_type in ["image", "stylesheet", "media", "font"]:
@@ -36,10 +34,8 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
             page = await context.new_page()
             await page.route("**/*", block_aggressively)
             
-            # API Link
             target_url = f"https://api-by-black-hats-hackers.kesug.com/vehicle-api.php?vehicle_no={vehicle_no}"
             
-            # Timeout set to 60 seconds
             await page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
             
             content = await page.inner_text("body")
@@ -48,18 +44,16 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
             try:
                 json_data = json.loads(content)
                 
-                # Extract Mobile Number
-                mobile_num = "Not Found"
-                if "data" in json_data and "mobile_no" in json_data["data"]:
-                    mobile_num = json_data["data"]["mobile_no"]
+                # Mobile Number aur Owner Name nikaalne ka logic
+                mobile_num = json_data.get("data", {}).get("mobile_no", "Not Found")
+                owner_name = json_data.get("data", {}).get("vehicle_info", {}).get("data", {}).get("owner_name", "Not Found")
                 
-                # Final Output
+                # 🔴 मार्केटिंग मैसेज हटा दिया गया है
                 return {
                     "status": "success", 
-                    "message": "Vehicle to number API available! DM to buy API @techvishalboss",
                     "vehicle_number": vehicle_no,
-                    "mobile_number": mobile_num,
-                    "telegram": "@techvishalboss"
+                    "owner_name": owner_name,
+                    "mobile_number": mobile_num
                 }
                 
             except json.JSONDecodeError:
