@@ -33,16 +33,17 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
             try:
                 json_data = json.loads(content)
                 
-                # 🔴 सिर्फ Mobile Number निकालने का लॉजिक
+                # Mobile Number निकालने का लॉजिक
                 mobile_num = "Not Found"
                 if "data" in json_data and "mobile_no" in json_data["data"]:
                     mobile_num = json_data["data"]["mobile_no"]
                 
-                # 🔴 अब API सिर्फ मोबाइल नंबर रिटर्न करेगी
+                # 🔴 बिल्कुल आपके माँगे हुए फॉर्मेट में नया रिस्पॉन्स
                 return {
                     "status": "success", 
-                    "attribution": "Powered by Vishal Boss", 
-                    "mobile_number": mobile_num
+                    "vehicle_number": vehicle_no,
+                    "mobile_number": mobile_num,
+                    "telegram": "@techvishalboss"
                 }
                 
             except json.JSONDecodeError:
