@@ -2,7 +2,8 @@ from fastapi import FastAPI, Query
 from playwright.async_api import async_playwright
 import json
 import time
-from playwright_stealth import stealth_async # Stealth Bypass Library
+import base64
+from playwright_stealth import stealth_async
 
 app = FastAPI()
 
@@ -19,7 +20,6 @@ def home():
 async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number")):
     async with async_playwright() as p:
         try:
-            # WAF bypass ke liye Pro Browser Setup
             browser = await p.chromium.launch(
                 headless=True, 
                 args=[
@@ -28,7 +28,7 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
                     '--disable-dev-shm-usage',
                     '--disable-blink-features=AutomationControlled',
                     '--disable-infobars',
-                    '--window-size=1920,1080' # Asli screen size dikhana zaruri hai
+                    '--window-size=1920,1080'
                 ]
             )
             
@@ -38,16 +38,11 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
             )
             
             page = await context.new_page()
-            
-            # 🔴 STEALTH MODE ACTIVATE - Ye InfinityFree/Cloudflare ko bypass karega
             await stealth_async(page)
             
             target_url = f"https://api-by-black-hats-hackers.kesug.com/vehicle-api.php?vehicle_no={vehicle_no}&_t={int(time.time())}"
             
-            # networkidle free hosting par atak jata hai, domcontentloaded safe hai
             await page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
-            
-            # ⏳ सिक्योरिटी चैलेंज (JS Check) को पास होने के लिए थोड़ा एक्स्ट्रा टाइम 
             await page.wait_for_timeout(6000) 
             
             try:
@@ -55,18 +50,14 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
                 content = await page.locator("body").inner_text()
             except:
                 content = await page.content()
-                
-            await browser.close()
             
-            # Data Cleanup (Free hosting ke extra HTML tags hatane ke liye)
             clean_content = content.strip()
             if "{" in clean_content:
-                # Sirf { se shuru hone wala actual JSON extract karega
                 clean_content = clean_content[clean_content.find("{"):] 
             
-            # JSON पार्सिंग
             try:
                 json_data = json.loads(clean_content)
+                await browser.close()
                 
                 main_data = json_data.get("data", {})
                 vehicle_info_data = main_data.get("vehicle_info", {}).get("data", {})
@@ -84,11 +75,16 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
                 }
                 
             except json.JSONDecodeError:
-                # Agar fail hua toh logs ko clean rakhne ke liye sirf shuru ka WAF page code dikhayega
+                # 📸 Yahan Screenshot ka jadu hoga
+                screenshot_bytes = await page.screenshot()
+                base64_image = base64.b64encode(screenshot_bytes).decode('utf-8')
+                await browser.close()
+                
                 return {
                     "status": "error", 
-                    "message": "Challenge bypass nahi hua ya data valid JSON nahi hai.", 
-                    "raw": clean_content[:300], 
+                    "message": "Challenge bypass nahi hua. Check screenshot image to see what Render is seeing.", 
+                    "raw_text": clean_content[:100], 
+                    "screenshot_base64": base64_image, # Yahan badi si string aayegi
                     "api_owner": "Vishal Boss",
                     "contact": "contact on telegram @techvishalboss"
                 }
@@ -96,7 +92,7 @@ async def get_vehicle(vehicle_no: str = Query(..., description="Gaadi ka number"
         except Exception as e:
             return {
                 "status": "error", 
-                "message": str(e),
+                "message": f"Browser Error: {str(e)}",
                 "api_owner": "Vishal Boss",
                 "contact": "contact on telegram @techvishalboss"
             }
